@@ -1,15 +1,23 @@
+#include <Adafruit_GFX.h>
+#include <Adafruit_GrayOLED.h>
+#include <Adafruit_SPITFT.h>
+#include <Adafruit_SPITFT_Macros.h>
+#include <gfxfont.h>
+#include <Adafruit_SSD1306.h>
+#include <splash.h>
+#include <Adafruit_BMP085.h>
 #include<MQ2.h>
-#include<LiquidCrystal_I2C.h>
 
 #define MQ_PIN A0
 
-LiquidCrystal_I2C lcd (0x27, 16, 2);
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 MQ2 mq2(A0);
+Adafruit_BMP085 pressure;
 
 void setup(){
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   mq2.begin();
-  lcd.begin();
-  lcd.backlight();
+  pressure.begin();
   Serial.begin(9600);
 }
 
@@ -17,15 +25,27 @@ void loop(){
   float concentratieCO = mq2.readCO();
   float concentratieLPG = mq2.readLPG();
   float concentratieFum = mq2.readSmoke();
-  lcd.setCursor(0, 0);
-  lcd.print("Fum: ");
-  lcd.print(concentratieFum);
-  lcd.print("ppm   ");
+  float presiune = pressure.readPressure();
+  
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  display.print("Fum: ");
+  display.print(concentratieFum);
+  display.print(" ppm   ");
+  display.display();
 
-  lcd.setCursor(0, 1);
-  lcd.print("CO: ");
-  lcd.print(concentratieCO);
-  lcd.print("ppm  ");
+  display.setCursor(0, 8);
+  display.print("CO: ");
+  display.print(concentratieCO);
+  display.print(" ppm  ");
+  display.display();
 
+  display.setCursor(0, 16);
+  display.print("P: ");
+  display.print(presiune);
+  display.print(" mmHg ");
+  display.display();
+  
   delay(1000);
 }
