@@ -49,3 +49,55 @@ void loop(){
   
   delay(1000);
 }
+
+
+
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_GrayOLED.h>
+#include <Adafruit_SPITFT.h>
+#include <Adafruit_SPITFT_Macros.h>
+#include <gfxfont.h>
+//#include <SFE_BMP180.h>
+#include <Adafruit_SSD1306.h>
+#include <splash.h>
+#include<MQ2.h>
+#include<Wire.h>
+
+#define MQ_PIN A0
+#define OLED_RESET -1;
+
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire, -1);
+MQ2 mq2(A0);
+
+  
+void setup(){
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+  display.display();
+  mq2.begin();
+}
+
+void loop(){
+
+  display.setCursor(0, 0);
+  display.print("Hello World!");
+  display.display();
+
+  unsigned int concentratieCO = mq2.readCO();
+  unsigned int concentratieFum = mq2.readSmoke();
+  
+  display.setCursor(0, 8);
+  display.print("Fum: ");
+  display.print(concentratieFum);
+  display.print(" ppm   ");
+  display.display();
+
+  display.setCursor(0, 16);
+  display.print("CO: ");
+  display.print(concentratieCO);
+  display.print(" ppm  ");
+  display.display();
+
+  delay(1000);
+ 
+}
