@@ -1,103 +1,97 @@
-#include <Adafruit_GFX.h>
-#include <Adafruit_GrayOLED.h>
-#include <Adafruit_SPITFT.h>
-#include <Adafruit_SPITFT_Macros.h>
-#include <gfxfont.h>
-#include <Adafruit_SSD1306.h>
-#include <splash.h>
 #include <Adafruit_BMP085.h>
-#include<MQ2.h>
-
-#define MQ_PIN A0
-
-Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
-MQ2 mq2(A0);
-Adafruit_BMP085 pressure;
-
-void setup(){
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  mq2.begin();
-  pressure.begin();
-  Serial.begin(9600);
-}
-
-void loop(){
-  float concentratieCO = mq2.readCO();
-  float concentratieLPG = mq2.readLPG();
-  float concentratieFum = mq2.readSmoke();
-  float presiune = pressure.readPressure();
-  
-  display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.print("Fum: ");
-  display.print(concentratieFum);
-  display.print(" ppm   ");
-  display.display();
-
-  display.setCursor(0, 8);
-  display.print("CO: ");
-  display.print(concentratieCO);
-  display.print(" ppm  ");
-  display.display();
-
-  display.setCursor(0, 16);
-  display.print("P: ");
-  display.print(presiune);
-  display.print(" mmHg ");
-  display.display();
-  
-  delay(1000);
-}
-
-
-
-
 #include <Adafruit_GFX.h>
 #include <Adafruit_GrayOLED.h>
 #include <Adafruit_SPITFT.h>
 #include <Adafruit_SPITFT_Macros.h>
 #include <gfxfont.h>
-//#include <SFE_BMP180.h>
 #include <Adafruit_SSD1306.h>
 #include <splash.h>
-#include<MQ2.h>
-#include<Wire.h>
+#include <DustSensor.h>
+#include <MQ2.h>
+#include <Wire.h>
 
-#define MQ_PIN A0
-#define OLED_RESET -1;
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
+Adafruit_BMP085 bmp180;
 
-Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire, -1);
+int GreenLed = 8;
+int RedLed = 9;
+int RedLed2 = 10;
+
+
 MQ2 mq2(A0);
-
-  
+DustSensor dustSensor(7);
 void setup(){
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+  
+  Serial.begin(9600);
+ 
+   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
   display.display();
   mq2.begin();
+  bmp180.begin();
+  dustSensor.begin(); 
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
 }
-
 void loop(){
-
-  display.setCursor(0, 0);
-  display.print("Hello World!");
-  display.display();
 
   unsigned int concentratieCO = mq2.readCO();
   unsigned int concentratieFum = mq2.readSmoke();
+  float temperatura = bmp180.readTemperature();
+  float altitudine = bmp180.readAltitude();
+  float praf = dustSensor.readConcentration();
   
-  display.setCursor(0, 8);
-  display.print("Fum: ");
-  display.print(concentratieFum);
-  display.print(" ppm   ");
-  display.display();
+    display.clearDisplay();
+    display.setTextColor(WHITE);
+    display.setCursor(0, 0);
+    display.print("Fum: ");
+    display.print(concentratieFum);
+    display.print(" ppm   ");
+    display.display();
 
-  display.setCursor(0, 16);
-  display.print("CO: ");
-  display.print(concentratieCO);
-  display.print(" ppm  ");
-  display.display();
+    display.setCursor(0, 8);
+    display.print("CO: ");
+    display.print(concentratieCO);
+    display.print(" ppm  ");
+    display.display();
 
-  delay(1000);
+    display.setCursor(0, 16);
+    display.print("T: ");
+    display.print(temperatura);
+    display.print(" C");
+    display.display();
+
+    display.setCursor(0, 24);
+    display.print("A: ");
+    display.print(altitudine);
+    display.display();
+
+    display.setCursor(0, 32);
+    display.print("PM: ");
+    display.print(praf);
+    display.print(" ug/m3");
+    display.display();
+
+  if(concentratieFum < 400 && concentratieCO < 400 && praf < 60){
+  digitalWrite(GreenLed, HIGH);
+  digitalWrite(RedLed, LOW);
+  digitalWrite(RedLed2, LOW);
+  }
+  else if(concentratieFum >= 400 || concentratieFum < 1000 && concentratieCO >= 400 || concentratieCO < 1000 && praf >= 60 || praf < 100)
+{
+  digitalWrite(GreenLed, LOW);
+  digitalWrite(RedLed, HIGH);
+  digitalWrite(RedLed2, LOW);
+}
+  else if(concentratieFum > 1000 && concentratieCO > 1000 && praf > 100){
+  digitalWrite(GreenLed, LOW);
+  digitalWrite(RedLed, HIGH);
+  digitalWrite(RedLed2, HIGH);
+  }
+  delay(3000);
  
 }
+
